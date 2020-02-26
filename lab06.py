@@ -53,11 +53,22 @@ data1 <<= registerFile[rt]
 
 
 # ADD: 0hex / 20hex  10 0000
+if ((op == 0b00) and (func == 0b100000)): 
+    registerFile[rd] = registerFile[rs] + registerFile[rt]
 # SUB: 0hex / 22hex  10 0010
+if ((op == 0b00) and (func == 0b100010)):
+    registerFile[rd] = registerFile[rs] - registerFile[rt]
 # AND: 0hex / 24hex  10 0100
+if ((op == 0b00) and (func == 0b100100)):
+    registerFile[rd] = registerFile[rs] and registerFile[rt]
 # OR:  0hex / 25hex  10 0101
+if ((op == 0b00) and (func == 0b100101)):
+    registerFile[rd] = registerFile[rs] or registerFile[rt];
 # XOR: 0hex / 26hex  10 0110
+if ((op == 0b00) and (func == 0b100110)):
+    registerFile[rd] = registerFile[rs] ^ registerFile[rs];
 # SLL: 0hex / 0hex   00 0000
+if ((op == 0b00) and (func == 0b000000)):
 # SRL: 0hex / 02hex  00 0010
 # SRA: 0hex / 03hex  00 0011
 # SLT: 0hex / 2Ahex  10 1010
