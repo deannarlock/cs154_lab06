@@ -5,6 +5,8 @@ import pyrtl
 
 registerFile = pyrtl.MemBlock(bitwidth=16, addrwidth=32, name="registerFile", max_read_ports=2, max_write_ports=2, asynchronous=False, block=None)
 
+instr = pyrtl.Input(bitwidth=32, name='instr')
+
 
 sample_instructions = [201326592, 286326786, 4202528, 2366177284]
 mem = pyrtl.RomBlock(bitwidth=32, addrwidth=2, romdata=sample_instructions, max_read_ports=1)
@@ -13,12 +15,6 @@ mem = pyrtl.RomBlock(bitwidth=32, addrwidth=2, romdata=sample_instructions, max_
 counter = pyrtl.Register(bitwidth=2)
 counter.next <<= counter + 1
 
-data = pyrtl.WireVector(bitwidth=32, name='data')
-data <<= mem[counter]
-
-# read data stored in rom
-data = pyrtl.WireVector(bitwidth=32, name='data')
-data <<= mem[counter]
 
 # decode data
 op = pyrtl.Output(bitwidth=6, name='op')
@@ -33,45 +29,57 @@ data0 = pyrtl.Output(bitwidth=16, name='data0')
 data1 = pyrtl.Output(bitwidth=16, name='data1')
 
 # ALU output data
-aluOutput = pyrtl.Output(bitwidth=16, name='aluOutput')
+alu_out = pyrtl.Output(bitwidth=16, name='alu_out')
 
 # INSTRUCTION DECODE LOGIC
 
-op <<= data[-6:]
-rs <<= data[-11:-6]
-rt <<= data[-16:-11]
-rd <<= data[-21:-16]
-sh <<= data[-26:-21]
-func <<= data[-32:-26]
+op <<= instr[-6:]
+rs <<= instr[-11:-6]
+rt <<= instr[-16:-11]
+rd <<= instr[-21:-16]
+sh <<= instr[-26:-21]
+func <<= instr[-32:-26]
+
+r_reg0 = pyrtl.WireVector(bitwidth=16,name='r_reg0')
+r_reg1 = pyrtl.WireVector(bitwidth=16,name='r_reg1')
+w_data = pyrtl.WireVector(bitwidth=16,name='w_data')
+w_reg = pyrtl.WireVector(bitwidth=5,name='w_reg')
+
 
 
 # REGISTER DECODE LOGIC
 data0 <<= registerFile[rs]
 data1 <<= registerFile[rt]
-
+r_reg0 <<= rs
+r_reg1 <<= rt
+w_data <<= alu_out
+w_reg <<= rd
+registerFile[w_reg] <<= w_data
 # ALU LOGIC
 
+with pyrtl.conditional_assignment:
+    with func==int(0x20):
+        alu_out |= data0 + data1
+    with func==int(0x22):
+        alu_out |= data0 - data1
+    with func==int(0x24):
+        alu_out |= data0 and data1
+    with func==int(0x25):
+        alu_out |= data0 or data1
+    with func==int(0x26):
+        alu_out |= data0 ^ data1
+    with func==int(0x0);
+        alu_out |= pyrtl.corecircuits.shift_left_logical(data1, sh)
+    with func==int(0x2):
+        alu_out |= pyrtl.corecircuits.shift_right_logical(data1, sh)
+    with func==int(0x3):
+        alu_out |= pyrtl.corecircuits.shift_right_arithmetic(data1, sh)
+    with func==int(0x2A)
+        alu_out |= data0 > data1
+    
 
-# ADD: 0hex / 20hex  10 0000
-if ((op == 0b00) and (func == 0b100000)): 
-    registerFile[rd] = registerFile[rs] + registerFile[rt]
-# SUB: 0hex / 22hex  10 0010
-if ((op == 0b00) and (func == 0b100010)):
-    registerFile[rd] = registerFile[rs] - registerFile[rt]
-# AND: 0hex / 24hex  10 0100
-if ((op == 0b00) and (func == 0b100100)):
-    registerFile[rd] = registerFile[rs] and registerFile[rt]
-# OR:  0hex / 25hex  10 0101
-if ((op == 0b00) and (func == 0b100101)):
-    registerFile[rd] = registerFile[rs] or registerFile[rt];
-# XOR: 0hex / 26hex  10 0110
-if ((op == 0b00) and (func == 0b100110)):
-    registerFile[rd] = registerFile[rs] ^ registerFile[rs];
-# SLL: 0hex / 0hex   00 0000
-if ((op == 0b00) and (func == 0b000000)):
-# SRL: 0hex / 02hex  00 0010
-# SRA: 0hex / 03hex  00 0011
-# SLT: 0hex / 2Ahex  10 1010
+
+
 
 
 
