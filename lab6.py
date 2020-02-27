@@ -1,9 +1,11 @@
+#Dean Narlock and Justin Tjoa
+
 import pyrtl
 
 
 
 
-rf = pyrtl.MemBlock(bitwidth=16, addrwidth=16, name='rf')
+rf = pyrtl.MemBlock(bitwidth=16, addrwidth=5, name='rf')
 
 instr = pyrtl.Input(bitwidth=32, name='instr')
 
@@ -12,7 +14,6 @@ instr = pyrtl.Input(bitwidth=32, name='instr')
 
 
 # decode data
-op = pyrtl.WireVector(bitwidth=6, name='op')
 rs = pyrtl.WireVector(bitwidth=5, name='rs')
 rt = pyrtl.WireVector(bitwidth=5, name='rt')
 rd = pyrtl.WireVector(bitwidth=5, name='rd')
@@ -28,12 +29,11 @@ alu_out = pyrtl.WireVector(bitwidth=16, name='alu_out')
 
 # INSTRUCTION DECODE LOGIC
 
-op <<= instr[-6:]
-rs <<= instr[-11:-6]
-rt <<= instr[-16:-11]
-rd <<= instr[-21:-16]
-sh <<= instr[-26:-21]
-func <<= instr[-32:-26]
+rs <<= instr[21:26]
+rt <<= instr[16:21]
+rd <<= instr[11:16]
+sh <<= instr[6:11]
+func <<= instr[0:6]
 
 r_reg0 = pyrtl.WireVector(bitwidth=16,name='r_reg0')
 r_reg1 = pyrtl.WireVector(bitwidth=16,name='r_reg1')
@@ -52,6 +52,8 @@ w_reg <<= rd
 rf[w_reg] <<= w_data
 # ALU LOGIC
 
+
+
 with pyrtl.conditional_assignment:
     with func==int(0x20):
         value = data0 + data1
@@ -60,10 +62,10 @@ with pyrtl.conditional_assignment:
         value = data0 - data1
         alu_out |= value
     with func==int(0x24):
-        value = data0 and data1
+        value = data0 & data1
         alu_out |= value
     with func==int(0x25):
-        value = data0 or data1
+        value = data0 | data1
         alu_out |= value
     with func==int(0x26):
         value = data0 ^ data1
@@ -78,15 +80,4 @@ with pyrtl.conditional_assignment:
         value = data0 > data1
         alu_out |= value
     
-
-
-
-
-
-
-
-
-
-
-
 
